@@ -1,0 +1,40 @@
+# --- Personal data: never commit ----------------------------------------------------------
+# Real results spreadsheets hold athlete names. Keep them in data/ (ignored) or outside the repo.
+data/
+out/
+*.xlsx
+*.xls
+*.ods
+*.csv
+# Removal-request list for the website (names of people who asked to be hidden)
+hide.txt
+suppress*.txt
+# Parsed exports written with `bgopl.cli inspect --json`
+/*.json
+# Excel lock files
+~$*
+
+.env
+.env.*
+!.env.example
+
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db

@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bgopl"
+version = "0.1.0"
+description = "Importer for Bulgarian powerlifting meet results (BG Open Powerlifting)"
+requires-python = ">=3.11"
+dependencies = ["openpyxl>=3.1"]
+
+[project.optional-dependencies]
+db = ["psycopg[binary]>=3.1"]
+dev = ["pytest>=8", "ruff>=0.5"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "tests"]
+testpaths = ["tests"]
+markers = ["db: needs PostgreSQL, set BGOPL_TEST_DSN (skipped otherwise)"]
+
+[tool.ruff]
+line-length = 100
