@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Data notes · BG Open Powerlifting{% endblock %}
+{% block content %}
+<p><a href="/meets/{{ rec.slug }}">← {{ rec.meet.title or rec.source_name }}</a></p>
+<h1>Data notes</h1>
+<p class="sub">What the checks found in the source spreadsheet. Nothing is corrected silently: the
+numbers on the site are exactly the ones in the file.</p>
+{% if findings %}
+<div class="wrap"><table>
+<tr><th>Severity</th><th>Check</th><th>Row</th><th>Finding</th></tr>
+{% for i in findings %}
+<tr><td class="sev-{{ i.severity.value }}">{{ i.severity.value }}</td><td>{{ i.code }}</td>
+<td>{{ i.row or '' }}</td><td style="white-space:normal">{{ i.message }}</td></tr>
+{% endfor %}
+</table></div>
+{% else %}<p>No findings.</p>{% endif %}
+{% endblock %}

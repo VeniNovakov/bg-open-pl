@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}BG Open Powerlifting{% endblock %}</title>
+<style>
+:root{--bg:#fafaf8;--card:#fff;--text:#1d1f23;--muted:#6a6f78;--line:#e3e4e0;--accent:#b4232a;--ok:#1d7a46;--bad:#b4232a;--warn:#9a6700}
+@media (prefers-color-scheme:dark){:root{--bg:#15171a;--card:#1d2024;--text:#e8e9ea;--muted:#9aa0a8;--line:#2f3338;--accent:#ef6a70;--ok:#58c785;--bad:#ef6a70;--warn:#e0b04a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{background:var(--card);border-bottom:1px solid var(--line)}
+header .in,main,footer .in{max-width:1100px;margin:0 auto;padding:0 16px}
+header .in{display:flex;gap:24px;align-items:center;flex-wrap:wrap;min-height:56px}
+.brand{font-weight:700;color:var(--accent);text-decoration:none;letter-spacing:.2px}
+nav{display:flex;gap:18px}
+nav a{color:var(--text);text-decoration:none}
+nav a:hover,a:hover{text-decoration:underline}
+a{color:var(--accent)}
+main{padding-top:24px;padding-bottom:40px}
+h1{font-size:1.6rem;margin:.2em 0 .1em}
+h2{font-size:1.15rem;margin:1.8em 0 .5em}
+.sub,.muted{color:var(--muted)}
+.wrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:.93rem}
+th,td{padding:7px 10px;text-align:left;white-space:nowrap;border-bottom:1px solid var(--line)}
+th{font-size:.78rem;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);font-weight:600}
+tr:last-child td{border-bottom:0}
+td.wrapcell,table.compact td{white-space:normal}
+td.wrapcell{min-width:240px}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.ok{color:var(--ok)}.x{color:var(--bad);text-decoration:line-through}
+.badge{font-size:.72rem;padding:1px 7px;border:1px solid var(--line);border-radius:10px;color:var(--muted)}
+.badge.warn{color:var(--warn);border-color:var(--warn)}
+.jump{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.jump a{font-size:.85rem;padding:2px 10px;border:1px solid var(--line);border-radius:14px;text-decoration:none;background:var(--card)}
+.filters{display:flex;gap:12px;flex-wrap:wrap;margin:14px 0}
+select,button{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--text)}
+.grid{display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.note{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--warn);padding:10px 14px;border-radius:6px;margin:14px 0}
+.sev-error{color:var(--bad);font-weight:600}.sev-warning{color:var(--warn)}.sev-info{color:var(--muted)}
+.tiles{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));margin:12px 0}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.tile .k{font-size:.72rem;text-transform:uppercase;letter-spacing:.4px;color:var(--muted)}
+.tile .v{font-size:1.35rem;font-weight:700;line-height:1.25}
+.tile .s{font-size:.78rem;color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:18px 0}
+.card h2{margin-top:0}
+.chip{display:inline-block;text-align:center;padding:0 6px;font-size:.88rem;border-radius:10px;border:1px solid var(--line);font-variant-numeric:tabular-nums;margin-right:2px}
+.chip.ok{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,transparent)}
+.chip.x{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 10%,transparent)}
+.bar{display:block;height:8px;border-radius:4px;background:var(--line);min-width:60px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent)}
+.spark{width:100%;max-width:420px;height:auto}
+.spark polyline{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round}
+.spark circle{fill:var(--accent)}
+footer{border-top:1px solid var(--line);color:var(--muted);font-size:.85rem;padding:16px 0}
+</style>
+</head>
+<body>
+<header><div class="in">
+<a class="brand" href="/">BG Open Powerlifting</a>
+<nav><a href="/">Meets</a><a href="/rankings">Rankings</a><a href="/docs">API</a></nav>
+<span class="badge warn">proof of concept</span>
+</div></header>
+<main>{% block content %}{% endblock %}</main>
+<footer><div class="in">
+Results from the Bulgarian Powerlifting Federation (БФСТ) protocols, shown as published.
+Request removal of your data: {{ contact }}.
+</div></footer>
+</body>
+</html>

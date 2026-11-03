@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% from "_macros.html" import attempts, status_badge %}
+{% block title %}{{ name }} · BG Open Powerlifting{% endblock %}
+{% block content %}
+<p><a href="/">← All meets</a></p>
+<h1>{{ name }}</h1>
+<p class="sub">{{ 'Women' if sex == 'F' else 'Men' if sex == 'M' else '' }}{% if clubs %} · {{ clubs|join(', ') }}{% endif %}
+ · {{ cards|length }} meet{{ '' if cards|length == 1 else 's' }}</p>
+
+{% for equipment, items in bests.items() if items %}
+<h2>Personal bests <span class="sub">· {{ equipment }}</span></h2>
+<div class="tiles">
+{% for b in items %}
+<div class="tile"><div class="k">{{ b.label }}</div>
+<div class="v">{{ '%.2f'|format(b.value) if b.is_points else fmt_kg(b.value) ~ ' kg' }}</div>
+<div class="s"><a href="/meets/{{ b.meet.slug }}">{{ b.meet.meet.date or b.meet.slug }}</a></div></div>
+{% endfor %}
+</div>
+{% endfor %}
+
+{% if coords %}
+<h2>Progress <span class="sub">· IPF GL points</span></h2>
+<svg class="spark" viewBox="0 0 260 56" role="img" aria-label="IPF GL points over time">
+<polyline points="{% for x, y in coords %}{{ x }},{{ y }} {% endfor %}"/>
+{% for x, y in coords %}<circle cx="{{ x }}" cy="{{ y }}" r="3"/>{% endfor %}
+</svg>
+<div class="wrap"><table>
+<tr><th>Date</th><th class="n">Total</th><th class="n">Points</th></tr>
+{% for slug, l in trend %}
+<tr><td><a href="/meets/{{ slug }}">{{ slug }}</a></td><td class="n">{{ fmt_kg(l.total_kg) }}</td><td class="n">{{ '%.2f'|format(l.points) }}</td></tr>
+{% endfor %}
+</table></div>
+{% endif %}
+
+<h2>Results</h2>
+{% for c in cards %}
+{% set l = c.lifter %}
+<section class="card">
+<h2><a href="/meets/{{ c.rec.slug }}">{{ c.rec.meet.title or c.rec.source_name }}</a>
+<span class="sub">· {{ c.rec.meet.date or '' }}</span> {{ status_badge(l) }}</h2>
+<div class="tiles">
+<div class="tile"><div class="k">Place</div><div class="v">{{ l.place if l.place and l.status.value == 'ranked' else '–' }}</div><div class="s">{{ c.class_place }}</div></div>
+<div class="tile"><div class="k">Class</div><div class="v">{{ l.class_label + ' kg' if l.class_label else '–' }}</div><div class="s">{{ l.division }} · {{ l.equipment }}</div></div>
+<div class="tile"><div class="k">Bodyweight</div><div class="v">{{ fmt_kg(l.body_weight_kg) }}</div><div class="s">kg</div></div>
+<div class="tile"><div class="k">Total</div><div class="v">{{ fmt_kg(l.total_kg) }}</div><div class="s">kg</div></div>
+<div class="tile"><div class="k">Points</div><div class="v">{{ '%.2f'|format(l.points) if l.points is not none else '–' }}</div><div class="s">{{ c.points_rank or (l.points_kind if l.points is not none else '') }}</div></div>
+</div>
+<div class="wrap"><table>
+<tr><th>Lift</th><th>Attempts</th><th class="n">Best</th><th>Share of total</th></tr>
+{% for name_, best, pct in c.shares %}
+{% set key = {'Squat':'S','Bench press':'B','Deadlift':'D'}[name_] %}
+<tr><td>{{ name_ }}</td><td>{{ attempts(l.lifts[key]) }}</td><td class="n">{{ fmt_kg(best) }}</td>
+<td><span class="bar" title="{{ pct }}%"><i style="width:{{ pct }}%"></i></span></td></tr>
+{% endfor %}
+</table></div>
+<p class="muted">{{ c.good }} of {{ c.made }} attempts good</p>
+</section>
+{% endfor %}
+{% endblock %}

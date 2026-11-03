@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Bulgarian powerlifting results</h1>
+<p class="sub">A proof of concept built on the federation's spreadsheets: every number here comes
+from a parsed protocol and is checked against the file's own arithmetic.</p>
+
+{% if store.failed %}
+<div class="note"><strong>{{ store.failed|length }} file(s) could not be read:</strong>
+{% for name, why in store.failed %}<div>{{ name }}: {{ why }}</div>{% endfor %}</div>
+{% endif %}
+
+<h2>Meets</h2>
+{% if meets %}
+<div class="wrap"><table>
+<tr><th>Date</th><th>Meet</th><th>City</th><th class="n">Lifters</th><th>Data notes</th></tr>
+{% for r in meets %}
+<tr>
+<td>{{ r.meet.date or '?' }}</td>
+<td class="wrapcell"><a href="/meets/{{ r.slug }}">{{ r.meet.title or r.source_name }}</a></td>
+<td>{{ r.meet.city or '' }}</td>
+<td class="n">{{ r.lifters|length }}</td>
+<td><a href="/meets/{{ r.slug }}/notes">{{ r.findings|selectattr('severity.value','equalto','error')|list|length }} errors,
+{{ r.findings|selectattr('severity.value','equalto','warning')|list|length }} warnings</a></td>
+</tr>
+{% endfor %}
+</table></div>
+{% else %}
+<p class="muted">No meets loaded. Put standard-layout .xlsx files in the data folder and restart.</p>
+{% endif %}
+
+<div class="grid">
+{% for label, rows in tops.items() %}
+<section>
+<h2>Top {{ label|lower }} by IPF GL points</h2>
+{% if rows %}
+<div class="wrap"><table class="compact">
+<tr><th class="n">#</th><th>Lifter</th><th>Club</th><th class="n">Total</th><th class="n">Pts</th></tr>
+{% for rec, l in rows %}
+<tr><td class="n">{{ loop.index }}</td><td><a href="{{ athlete_url(l) }}">{{ l.name }}</a></td>
+<td>{{ l.club }}</td><td class="n">{{ fmt_kg(l.total_kg) }}</td><td class="n">{{ '%.2f'|format(l.points) }}</td></tr>
+{% endfor %}
+</table></div>
+<p><a href="/rankings?sex={{ 'F' if label == 'Women' else 'M' }}">Full ranking</a></p>
+{% else %}<p class="muted">No ranked lifters yet.</p>{% endif %}
+</section>
+{% endfor %}
+</div>
+{% endblock %}
