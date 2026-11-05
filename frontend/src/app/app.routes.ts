@@ -11,5 +11,10 @@ export const routes: Routes = [
     title: 'Meet · BG Open Powerlifting',
     loadComponent: () => import('./pages/meet').then((m) => m.MeetPage),
   },
+  {
+    path: 'athletes/:sex/:name',
+    title: 'Athlete · BG Open Powerlifting',
+    loadComponent: () => import('./pages/athlete').then((m) => m.AthletePage),
+  },
   { path: '**', redirectTo: '' },
 ];

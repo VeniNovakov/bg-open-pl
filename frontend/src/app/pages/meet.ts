@@ -118,6 +118,7 @@ export class MeetPage {
       }))
       .filter((c) => c.lifters.length > 0);
   });
+  
 
   protected readonly kg = kg;
   protected readonly points = points;

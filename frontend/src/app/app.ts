@@ -17,7 +17,6 @@ import { ApiService } from './api';
             >Meets</a
           >
         </nav>
-        <span class="badge warn">proof of concept</span>
       </div>
     </header>
     <main><router-outlet /></main>
