@@ -21,9 +21,9 @@ class AttemptStatus(str, Enum):
 
 
 class StatusSource(str, Enum):
-    EXPLICIT = "explicit"  # the file said so (for example a negative weight)
-    INFERRED = "inferred"  # derived from RESULT and attempt order, see outcomes.py
-    NONE = "none"  # nothing known
+    EXPLICIT = "explicit"
+    INFERRED = "inferred"
+    NONE = "none"
 
 
 @dataclass(frozen=True)
@@ -81,8 +81,6 @@ class TeamStanding:
 
 @dataclass
 class BestLifter:
-    """One row of a "Best Lifters of ..." table. Derived data, kept only for cross-checks."""
-
     row: int
     division: str
     place: int | None
@@ -114,11 +112,6 @@ class ParsedMeet:
     parser_version: str = "0.1.0"
 
 
-# ---------------------------------------------------------------------------------------------
-# The "standard" full-power layout (Bulgarian headers, three lifts, IPF GL points).
-# ---------------------------------------------------------------------------------------------
-
-
 class LifterStatus(str, Enum):
     RANKED = "ranked"
     GUEST = "guest"  # category cell reads "n/a": competes outside the ranking
@@ -146,7 +139,7 @@ class Lifter:
     sex: str | None  # "F" or "M", from the nearest "Жени"/"Мъже" heading
     sex_source: str  # "heading" or "inherited"
     equipment: str  # "classic" or "equipped" (equipped only under an explicit heading)
-    division: str  # column "Дивизия": Open, M1, M2, M3
+    division: str  # age division": Open, M1, M2, M3
     class_label: str | None  # from the category cell: "47", "84+"; None for a guest
     class_context: str | None  # from the class row above the lifter; None in a block without them
     class_limit_kg: Decimal | None  # None for open-ended "+" classes
@@ -217,12 +210,10 @@ class StandardMeet:
         return len(self.lifters)
 
     def by_class(self) -> list[tuple[str, list[Lifter]]]:
-        """(header, lifters) per sex / equipment / division / weight class, sorted by total."""
         from .views import group_lifters
 
         return group_lifters(self.lifters)
 
     def find(self, text: str) -> list[Lifter]:
-        """Lifters whose name contains the text (case-insensitive)."""
         needle = text.casefold()
         return [x for x in self.lifters if needle in x.name.casefold()]

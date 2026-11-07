@@ -22,7 +22,12 @@ _WILKS = {
     ),
 }
 _WILKS_RANGE = {"F": (26.51, 154.53), "M": (40.0, 201.9)}
-
+_IPF_GL = {
+    ("F", "classic"): (610.32796, 1045.59282, 0.03048),
+    ("F", "equipped"): (758.63878, 949.31382, 0.02435),
+    ("M", "classic"): (1199.72839, 1025.18162, 0.00921),
+    ("M", "equipped"): (1236.25115, 1449.21864, 0.01644),
+}
 
 def wilks_factor(bodyweight_kg: Decimal, sex: str) -> Decimal | None:
     x = float(bodyweight_kg)
@@ -32,17 +37,8 @@ def wilks_factor(bodyweight_kg: Decimal, sex: str) -> Decimal | None:
     denominator = sum(c * x**i for i, c in enumerate(_WILKS[sex]))
     return Decimal(str(round(500 / denominator, 6)))
 
-
 def wilks_factor_female(bodyweight_kg: Decimal) -> Decimal | None:
     return wilks_factor(bodyweight_kg, "F")
-
-_IPF_GL = {
-    ("F", "classic"): (610.32796, 1045.59282, 0.03048),
-    ("F", "equipped"): (758.63878, 949.31382, 0.02435),
-    ("M", "classic"): (1199.72839, 1025.18162, 0.00921),
-    ("M", "equipped"): (1236.25115, 1449.21864, 0.01644),
-}
-
 
 def ipf_gl_points(sex: str, equipment: str, bodyweight_kg: Decimal, total_kg: Decimal) -> Decimal | None:
     coeffs = _IPF_GL.get((sex, equipment))
