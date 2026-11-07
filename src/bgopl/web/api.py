@@ -2,7 +2,7 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi import HTTPException
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import FastAPI, HTTPException, Query
 
 from .schemas import (
     ClassGroupOut,

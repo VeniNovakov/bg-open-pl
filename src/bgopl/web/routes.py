@@ -1,6 +1,6 @@
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import os
 
 DEFAULT_FRONTEND = Path(__file__).resolve().parents[3] / "frontend" / "dist" / "frontend" / "browser"
@@ -8,14 +8,18 @@ DEFAULT_FRONTEND = Path(__file__).resolve().parents[3] / "frontend" / "dist" / "
 class SpaFiles(StaticFiles):
     async def get_response(self, path, scope):
         try:
-            return await super().get_response(path, scope)
+            response = await super().get_response(path, scope)
         except StarletteHTTPException as exc:
-            if exc.status_code != 404:
+            if exc.status_code != 404 or PurePosixPath(path).suffix:
                 raise
-            return await super().get_response("index.html", scope)
+            response = await super().get_response("index.html", scope)
+        if path in ("", ".", "index.html") or not PurePosixPath(path).suffix:
+            response.headers["Cache-Control"] = "no-cache"
+        return response
     
-def create_routes(app):
+def create_routes(app) -> bool:
     frontend = Path(os.environ.get("BGOPL_FRONTEND_DIR") or DEFAULT_FRONTEND)
-    if (frontend / "index.html").exists():
-        app.mount("/app", SpaFiles(directory=str(frontend), html=True), name="app")
-    return app
+    if not (frontend / "index.html").exists():
+        return False
+    app.mount("/app", SpaFiles(directory=str(frontend), html=True), name="app")
+    return True
