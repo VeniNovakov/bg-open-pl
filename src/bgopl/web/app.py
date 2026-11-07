@@ -8,8 +8,8 @@ from fastapi import FastAPI
 
 from ..models import Lifter
 from .store import Store
-from .routes import create_routes
-from .api import create_api
+from .routes import mount_routes
+from .api import mount_api
 
 SEX_CHOICES = {"F": "Women", "M": "Men"}
 DEFAULT_FRONTEND = Path(__file__).resolve().parents[3] / "frontend" / "dist" / "frontend" / "browser"
@@ -26,6 +26,8 @@ def create_app(data_dir: str | Path | None = None,
     app = FastAPI(title="BG Open Powerlifting (proof of concept)",
                   description="Results of Bulgarian powerlifting meets, parsed from the "
                               "federation's spreadsheets.")    
-    create_api(app, store)
-    create_routes(app)
+    app.state.store = Store.load_dir(data_dir, suppress_file)
+
+    mount_api(app, store)
+    mount_routes(app)
     return app

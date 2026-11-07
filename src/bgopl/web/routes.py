@@ -17,7 +17,7 @@ class SpaFiles(StaticFiles):
             response.headers["Cache-Control"] = "no-cache"
         return response
     
-def create_routes(app) -> bool:
+def mount_routes(app) -> bool:
     frontend = Path(os.environ.get("BGOPL_FRONTEND_DIR") or DEFAULT_FRONTEND)
     if not (frontend / "index.html").exists():
         return False

@@ -1,13 +1,14 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { switchMap } from 'rxjs';
+import { catchError, of, switchMap } from 'rxjs';
 
 import { ApiService, RankingRow } from '../api';
 import { athleteLink, kg, points } from '../format';
 import { Loaded, load } from '../load';
 
-type SortKey = 'rank' | 'name' | 'club' | 'class' | 'bw' | 'total' | 'points' | 'meet';
+type SortKey =
+  | 'rank' | 'name' | 'club' | 'class' | 'bw' | 'squat' | 'bench' | 'deadlift' | 'total' | 'points' | 'meet';
 
 const SORT_VALUE: Record<SortKey, (r: RankingRow) => string | number> = {
   rank: (r) => r.rank,
@@ -15,6 +16,9 @@ const SORT_VALUE: Record<SortKey, (r: RankingRow) => string | number> = {
   club: (r) => r.lifter.club,
   class: (r) => parseFloat(r.lifter.weight_class ?? '0') + (r.lifter.weight_class?.endsWith('+') ? 1000 : 0),
   bw: (r) => r.lifter.body_weight_kg ?? 0,
+  squat: (r) => r.lifter.squat.best_kg ?? 0,
+  bench: (r) => r.lifter.bench.best_kg ?? 0,
+  deadlift: (r) => r.lifter.deadlift.best_kg ?? 0,
   total: (r) => r.lifter.total_kg ?? 0,
   points: (r) => r.lifter.points ?? 0,
   meet: (r) => r.lifter.meet,
@@ -25,25 +29,33 @@ const SORT_VALUE: Record<SortKey, (r: RankingRow) => string | number> = {
   imports: [RouterLink],
   template: `
     <h1>Rankings</h1>
-    <p class="sub">Best IPF GL result of each ranked lifter. Click a column to sort.</p>
+    <p class="sub">Each lifter's best IPF GL result, with the squat, bench and deadlift that made the total. Click a column to sort.</p>
     <div class="filters">
       <label>Sex
-        <select [value]="sex()" (change)="sex.set($any($event.target).value)">
+        <select [value]="sex()" (change)="setFilter(sex, $any($event.target).value)">
           <option value="M">Men</option>
           <option value="F">Women</option>
           <option value="">Both</option>
         </select>
       </label>
       <label>Equipment
-        <select [value]="equipment()" (change)="equipment.set($any($event.target).value)">
+        <select [value]="equipment()" (change)="setFilter(equipment, $any($event.target).value)">
           <option value="classic">Classic</option>
           <option value="equipped">Equipped</option>
         </select>
       </label>
       <label>Division
-        <select [value]="division()" (change)="division.set($any($event.target).value)">
+        <select [value]="division()" (change)="setFilter(division, $any($event.target).value)">
           <option value="">All</option>
           @for (d of divisions; track d) { <option [value]="d">{{ d }}</option> }
+        </select>
+      </label>
+      <label>Weight class
+        <select (change)="weightClass.set($any($event.target).value)">
+          <option value="" [selected]="weightClass() === ''">All</option>
+          @for (c of classes(); track c) {
+            <option [value]="c" [selected]="c === weightClass()">{{ c }}</option>
+          }
         </select>
       </label>
       <label>Show
@@ -72,12 +84,15 @@ const SORT_VALUE: Record<SortKey, (r: RankingRow) => string | number> = {
               <td>{{ r.lifter.club }}</td>
               <td>{{ r.lifter.weight_class }}</td>
               <td class="n">{{ kg(r.lifter.body_weight_kg) }}</td>
-              <td class="n">{{ kg(r.lifter.total_kg) }}</td>
+              <td class="n">{{ kg(r.lifter.squat.best_kg) }}</td>
+              <td class="n">{{ kg(r.lifter.bench.best_kg) }}</td>
+              <td class="n">{{ kg(r.lifter.deadlift.best_kg) }}</td>
+              <td class="n"><strong>{{ kg(r.lifter.total_kg) }}</strong></td>
               <td class="n"><strong>{{ points(r.lifter.points) }}</strong></td>
               <td><a [routerLink]="['/meets', r.lifter.meet]">{{ r.lifter.meet }}</a></td>
             </tr>
           } @empty {
-            <tr><td colspan="8" class="state">No results for this selection.</td></tr>
+            <tr><td [attr.colspan]="columns.length" class="state">No results for this selection.</td></tr>
           }
         </table></div>
       }
@@ -93,6 +108,9 @@ export class RankingsPage {
     { key: 'club', label: 'Club', numeric: false },
     { key: 'class', label: 'Class', numeric: false },
     { key: 'bw', label: 'BW', numeric: true },
+    { key: 'squat', label: 'Squat', numeric: true },
+    { key: 'bench', label: 'Bench', numeric: true },
+    { key: 'deadlift', label: 'Deadlift', numeric: true },
     { key: 'total', label: 'Total', numeric: true },
     { key: 'points', label: 'IPF GL', numeric: true },
     { key: 'meet', label: 'Meet', numeric: false },
@@ -101,12 +119,25 @@ export class RankingsPage {
   protected readonly sex = signal<'F' | 'M' | ''>('M');
   protected readonly equipment = signal('classic');
   protected readonly division = signal('');
+  protected readonly weightClass = signal('');
   protected readonly limit = signal(50);
   protected readonly sort = signal<{ key: SortKey; dir: 1 | -1 }>({ key: 'rank', dir: 1 });
 
-  private readonly query = computed(() => ({
-    sex: this.sex(), equipment: this.equipment(), division: this.division(), limit: this.limit(),
+  /** The filters that decide which weight classes exist (a class only makes sense per sex). */
+  private readonly scope = computed(() => ({
+    sex: this.sex(), equipment: this.equipment(), division: this.division(),
   }));
+
+  private readonly query = computed(() => ({
+    ...this.scope(), weight_class: this.weightClass(), limit: this.limit(),
+  }));
+
+  protected readonly classes = toSignal(
+    toObservable(this.scope).pipe(
+      switchMap((q) => this.api.weightClasses(q).pipe(catchError(() => of([] as string[])))),
+    ),
+    { initialValue: [] as string[] },
+  );
 
   protected readonly state = toSignal(
     toObservable(this.query).pipe(switchMap((q) => load(this.api.rankings(q)))),
@@ -127,6 +158,11 @@ export class RankingsPage {
   protected readonly kg = kg;
   protected readonly points = points;
   protected readonly link = athleteLink;
+
+  protected setFilter<T>(filter: { set(value: T): void }, value: T): void {
+    filter.set(value);
+    this.weightClass.set('');
+  }
 
   protected sortBy(key: SortKey): void {
     this.sort.update((s) =>

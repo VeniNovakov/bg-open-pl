@@ -7,7 +7,7 @@ from pathlib import Path
 from ..models import Issue, Lifter, LifterStatus, StandardMeet
 from ..parse_standard import parse_standard
 from ..validate_standard import validate_standard
-
+from decimal import Decimal, InvalidOperation
 
 def _key(sex: str | None, name: str) -> tuple[str, str]:
     return (sex or "?", name.casefold().strip())
@@ -25,6 +25,11 @@ def read_suppressed(path: Path | None) -> set[tuple[str, str]]:
         out.add((sex.strip().upper() if sex != "*" else "*", name.casefold().strip()))
     return out
 
+def _class_order(label: str) -> tuple[Decimal, int]:
+    try:
+        return Decimal(label.rstrip("+")), label.endswith("+")
+    except InvalidOperation:
+        return Decimal(10**6), False
 
 @dataclass
 class MeetRecord:
@@ -83,15 +88,25 @@ class Store:
         return sorted(out, key=lambda t: t[0].slug, reverse=True)
 
     def rankings(self, sex: str | None = None, equipment: str = "classic",
-                 division: str | None = None) -> list[tuple[MeetRecord, Lifter]]:
+                 division: str | None = None, weight_class: str | None = None) -> list[tuple[MeetRecord, Lifter]]:
         best: dict[tuple[str, str], tuple[MeetRecord, Lifter]] = {}
         for rec in self.meets.values():
             for x in rec.lifters:
                 if (x.status is not LifterStatus.RANKED or x.points is None
                         or x.equipment != equipment
-                        or (sex and x.sex != sex) or (division and x.division != division)):
+                        or (sex and x.sex != sex) or (division and x.division != division)
+                        or (weight_class and x.class_label != weight_class)):
                     continue
                 key = _key(x.sex, x.name)
                 if key not in best or x.points > best[key][1].points:
                     best[key] = (rec, x)
+
         return sorted(best.values(), key=lambda t: (-t[1].points, t[1].name))
+
+    def weight_classes(self, sex: str | None = None, equipment: str = "classic",
+    division: str | None = None) -> list[str]:
+        labels = {x.class_label for rec in self.meets.values() for x in rec.lifters
+            if x.status is LifterStatus.RANKED and x.points is not None
+            and x.class_label and x.equipment == equipment
+            and (not sex or x.sex == sex) and (not division or x.division == division)}
+        return sorted(labels, key=_class_order)

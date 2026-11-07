@@ -75,6 +75,7 @@ export interface RankingQuery {
   sex?: 'F' | 'M' | '';
   equipment?: string;
   division?: string;
+  weight_class?: string;
   limit?: number;
 }
 
@@ -104,6 +105,14 @@ export class ApiService {
       if (value !== undefined && value !== '') params = params.set(key, String(value));
     }
     return this.http.get<RankingRow[]>('/api/rankings', { params });
+  }
+
+  weightClasses(query: Omit<RankingQuery, 'limit' | 'weight_class'>): Observable<string[]> {
+    let params = new HttpParams();
+    for (const [key, value] of Object.entries(query)) {
+      if (value !== undefined && value !== '') params = params.set(key, String(value));
+    }
+    return this.http.get<string[]>('/api/rankings/classes', { params });
   }
 
   athlete(sex: string, name: string): Observable<Lifter[]> {

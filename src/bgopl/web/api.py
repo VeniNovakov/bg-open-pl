@@ -1,9 +1,6 @@
-from pathlib import Path
-
 from fastapi import FastAPI
 from fastapi import HTTPException
-from fastapi import FastAPI, HTTPException, Query
-
+from fastapi import FastAPI, HTTPException, Query, Depends
 from .schemas import (
     ClassGroupOut,
     FindingOut,
@@ -15,10 +12,11 @@ from .schemas import (
     lifter_out,
     meet_summary,
 )
-from ..views import fmt_kg, group_lifters
+from ..views import group_lifters
 from .store import MeetRecord, Store
+from .deps import get_store
 
-def create_api(app: FastAPI, store: Store):
+def mount_api(app: FastAPI, store: Store):
     def record(slug: str) -> MeetRecord:
         rec = store.meets.get(slug)
         if rec is None:
@@ -42,13 +40,23 @@ def create_api(app: FastAPI, store: Store):
         return [finding_out(i) for i in record(slug).findings if i.code != "SUMMARY"]
 
     @app.get("/api/rankings", response_model=list[RankingRowOut], tags=["rankings"])
-    def api_rankings(sex: str | None = Query(None, pattern="^[FM]$"),
-                     equipment: str = Query("classic", pattern="^(classic|equipped)$"),
-                     division: str | None = None, limit: int = Query(50, ge=1, le=500)):
-        rows = store.rankings(sex, equipment, division)[:limit]
+    def list_rankings(sex: str | None = Query(None, pattern="^[FM]$"),
+                    equipment: str = Query("classic", pattern="^(classic|equipped)$"),
+                    division: str | None = None,
+                    weight_class: str | None = None,
+                    limit: int = Query(50, ge=1, le=500),
+                    store: Store = Depends(get_store)):
+        rows = store.rankings(sex, equipment, division, weight_class)[:limit]
         return [RankingRowOut(rank=i, lifter=lifter_out(x, rec.slug))
                 for i, (rec, x) in enumerate(rows, 1)]
-
+    
+    @app.get("/api/rankings/classes", response_model=list[str], tags=["rankings"])
+    def list_weight_classes(sex: str | None = Query(None, pattern="^[FM]$"),
+                        equipment: str = Query("classic", pattern="^(classic|equipped)$"),
+                        division: str | None = None, store: Store = Depends(get_store)):
+        """Weight classes that have a ranked result, for the filter in the rankings table."""
+        return store.weight_classes(sex, equipment, division)
+    
     @app.get("/api/athletes/{sex}/{name}", response_model=list[LifterOut], tags=["athletes"])
     def api_athlete(sex: str, name: str):
         results = store.athlete_results(sex, name)

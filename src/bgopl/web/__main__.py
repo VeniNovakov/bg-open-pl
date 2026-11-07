@@ -1,11 +1,6 @@
-"""python -m bgopl.web DATA_DIR [--port 8000] [--suppress FILE]"""
-
 from __future__ import annotations
-
 import argparse
-
 import uvicorn
-
 from .app import create_app
 
 
