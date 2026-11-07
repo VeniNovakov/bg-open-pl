@@ -16,7 +16,7 @@ import { StatusBadgeComponent } from '../shared/status-badge';
   selector: 'app-athlete-page',
   imports: [RouterLink, KeyValuePipe, AttemptsComponent, PointsChartComponent, StatusBadgeComponent],
   template: `
-    <p><a routerLink="/">← All meets</a></p>
+    <p><a routerLink="/app">← All meets</a></p>
     @let s = state();
     @switch (s.status) {
       @case ('loading') { <p class="state">Loading…</p> }
