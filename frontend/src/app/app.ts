@@ -16,6 +16,8 @@ import { ApiService } from './api';
           <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }"
             >Meets</a
           >
+          <a routerLink="/rankings" routerLinkActive="active">Rankings</a>
+          <a href="/docs">API</a>
         </nav>
       </div>
     </header>
