@@ -22,5 +22,8 @@ pythonpath = ["src", "tests"]
 testpaths = ["tests"]
 markers = ["db: needs PostgreSQL, set BGOPL_TEST_DSN (skipped otherwise)"]
 
+[tool.pyright]
+extraPaths = ["src/bgopl/tests"]
+
 [tool.ruff]
 line-length = 100
