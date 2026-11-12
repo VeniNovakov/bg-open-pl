@@ -1,3 +1,19 @@
+"""Parser for the standard full-power results sheet (Bulgarian headers, IPF GL points).
+
+Layout, top to bottom (see docs/layout-standard.md):
+
+    title row, then "federation | ISO date", then the header row ("Място", "Отбор", ...)
+    section rows   "Жени", "Мъже", "Ветерани - М1", "Шамшион на шампионите екипировъчен ..."
+    class rows     47.0 | "84+" | "М1 - 69"
+    athlete rows   place, name, club, division, bodyweight, category, 3 x (3 attempts + best),
+                   total, points, team points
+    derived tables best lifters ("Шамшион на шампионите"), team tables ("Отборно класиране",
+                   "Отбор жени", "Отбор мъже"): parsed only to cross-check the athlete rows
+
+A failed attempt is a negative weight. A category of "n/a" marks a guest lifter, a place of "DQ"
+a disqualified one. A bad row becomes an Issue instead of aborting the parse.
+"""
+
 from __future__ import annotations
 
 import re
@@ -34,17 +50,31 @@ HEADER_KEYS = {
     "най-добра тяга": "best_D",
     "тотал кг": "total",
     "точки за отбор": "team_points",
+    "place": "place",
+    "club": "club",
+    "division": "division",
+    "bodyweight": "bw",
+    "category": "category",
+    "best squat": "best_S",
+    "best bench": "best_B",
+    "best deadlift": "best_D",
+    "total kg": "total",
+    "team points": "team_points",
 }
-ATTEMPT_HEADER_RE = re.compile(r"^(клек|лег|м\.?\s*тяга)\s*-\s*([123])$")
-LIFT_OF_WORD = {"клек": "S", "лег": "B"}
+
+ATTEMPT_HEADER_RE = re.compile(
+    r"^(клек|лег|м\.?\s*тяга|squat|bench|deadlift)\s*-\s*([123])$")
+LIFT_OF_WORD = {"клек": "S", "лег": "B", "squat": "S", "bench": "B"} 
+WOMEN_WORDS = ("жени", "women")
+MEN_WORDS = ("мъже", "men")
 GUEST_MARKERS = {"n/a", "na", "н/д", "гост", "guest"}
 CLASS_RE = re.compile(
     r"^(?:[mм]\s*\d\s*-\s*)?(?P<n>\d+(?:[.,]\d+)?)\s*(?P<plus>\+)?\s*(?:кг|kg)?$", re.IGNORECASE
 )
-
-CHAMPION_HEADING_RE = re.compile(r"ша?м[пш]ион на шампионите")
+CHAMPION_HEADING_RE = re.compile(r"(?:ша?м[пш]ион на шампионите|champion of champions)")
 DIVISION_IN_HEADING_RE = re.compile(r"\b[mм]\s*(\d)\b")
-CITY_RE = re.compile(r"град\s+(?P<city>.+?)\s+\d")
+HEADING_DIVISION_RE = re.compile(r"\b(sjr|jr|open)\b")
+CITY_RE = re.compile(r"(?:град|city)\s+(?P<city>.+?)\s+\d", re.IGNORECASE)
 TEAM_TOTAL_RE = re.compile(r"=\s*(\d+)\s*$")
 TEAM_SCORERS_RE = re.compile(r"(?:^|[\s=\-])(\d+(?:\s*\+\s*\d+)*)\s*\+?\s*$")
 LIFTS = ("S", "B", "D")
@@ -127,6 +157,7 @@ def parse_team_text(text: str) -> tuple[str, list[int], int | None] | None:
     m_scorers = TEAM_SCORERS_RE.search(rest)
     nums = [int(x) for x in re.findall(r"\d+", m_scorers[1])] if m_scorers else []
     if total is not None and (not nums or (len(nums) == 1 and nums[0] != total)):
+
         scorers, club = [total], rest.strip(" =-")
     elif m_scorers:
         scorers = nums
@@ -154,14 +185,13 @@ class _Parser:
     def issue(self, code: str, severity: Severity, message: str, row: int | None = None) -> None:
         self.issues.append(Issue(code, severity, message, row))
 
-
     def _read_header(self) -> int:
         for index, (_, cells) in enumerate(self.rows):
             lows = [_low(c) for c in cells]
-            if "място" in lows and "тотал кг" in lows:
+            if ("място" in lows or "place" in lows) and ("тотал кг" in lows or "total kg" in lows):
                 self._map_header(lows)
                 return index
-        raise ValueError("no header row found (expected a row with 'Място' and 'Тотал КГ')")
+        raise ValueError("no header row found (expected a row with 'Място' and 'Тотал КГ', or 'Place' and 'Total kg')")
 
     def _map_header(self, lows: list[str]) -> None:
         self.attempt_cols = {k: [] for k in LIFTS}
@@ -180,12 +210,13 @@ class _Parser:
         if missing or self.points_col is None:
             raise ValueError(f"header row is missing columns: {missing or ['IPF points']}")
         place = self.cols["place"]
-        self.name_col = place + 1 if not lows[place + 1] else lows.index("име")
-        self.points_kind = lows[self.points_col]
+        self.name_col = place + 1 if not lows[place + 1] else lows.index("име" if "име" in lows else "name")
+        text = lows[self.points_col]
+        self.points_kind = "IPF GL" if text.startswith("ipf gl") else text
 
     def run(self) -> None:
         start = self._read_header()
-        mode = "athletes"
+        mode = "athletes"  
         sex: str | None = None
         sex_row_section: str | None = None
         section = ""
@@ -208,42 +239,45 @@ class _Parser:
             ]
             a_text, name_text = _clean(a), _clean(name)
 
-
             if not a_text and name_text and not others:
                 low = name_text.lower()
                 if CHAMPION_HEADING_RE.match(low):
-                    if "екипир" in low:
+                    if "екипир" in low or "equipped" in low:
                         mode, equipment = "athletes", "equipped"
                         section, section_no, class_ctx = name_text, section_no + 1, None
                         sex_row_section = None
                     else:
                         mode, best_section = "best", ""
                     continue
-                if low.startswith("отборно класиране"):
+                if low.startswith(("отборно класиране", "team ranking")):
                     mode, team_table = "team", "overall"
                     continue
-                if low.startswith("отбор жени"):
+                if low.startswith(("отбор жени", "women team")):
                     mode, team_table = "team", "women"
                     continue
-                if low.startswith("отбор мъже"):
+                if low.startswith(("отбор мъже", "men team")):
                     mode, team_table = "team", "men"
                     continue
                 if mode == "best":
                     best_section = name_text
                     continue
-                if mode == "team":  # a team row whose place cell is empty (ties, zero points)
+                if mode == "team":
                     self._team_row(row, cells, team_table, a, name_text)
                     continue
-                # a heading of the athlete part
-                equipment = "classic"
+
+                equipment = "equipped" if ("екипир" in low or "equipped" in low) else "classic"
                 section, section_no, class_ctx = name_text, section_no + 1, None
-                if low.startswith("жени"):
+                if low.startswith(WOMEN_WORDS):
                     sex = "F"
-                elif low.startswith("мъже"):
+                elif low.startswith(MEN_WORDS):
                     sex = "M"
-                sex_row_section = section if low.startswith(("жени", "мъже")) else sex_row_section
+                sex_row_section = (section if low.startswith(WOMEN_WORDS + MEN_WORDS)
+                                   else sex_row_section)
                 m = DIVISION_IN_HEADING_RE.search(low)
-                section_division = f"M{m[1]}" if m else None
+                named = HEADING_DIVISION_RE.search(low)
+                section_division = (f"M{m[1]}" if m
+                                    else {"sjr": "SJR", "jr": "JR", "open": "Open"}[named[1]]
+                                    if named else None)
                 continue
 
             if mode == "best":

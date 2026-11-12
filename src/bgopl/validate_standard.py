@@ -218,6 +218,9 @@ def _check_duplicates(meet: StandardMeet) -> list[Issue]:
 
 def _check_team_points(meet: StandardMeet) -> list[Issue]:
     out: list[Issue] = []
+    if all(x.team_points is None for x in meet.lifters):
+        return out 
+    
     beyond: dict[bool, list[int]] = {True: [], False: []}
     for lifter in meet.lifters:
         if lifter.status is not LifterStatus.RANKED or lifter.place is None:
@@ -241,7 +244,8 @@ def _check_team_tables(meet: StandardMeet) -> list[Issue]:
     out: list[Issue] = []
     clubs = sorted({lifter.club for lifter in meet.lifters if lifter.club})
     variants: dict[str, list[str]] = {}
-    sexes = {"women": "F", "men": "M"}
+    sexes = {"women": "F", "men": "M", "жени": "F", "мъже": "M"}
+
     for team in meet.team_rows:
         where = f"team table '{team.table}', {team.club}"
         row = team.row
@@ -282,14 +286,13 @@ def _check_best_lifters(meet: StandardMeet) -> list[Issue]:
         by_section[best.section].append(best)
     for section, bests in by_section.items():
         low = section.lower()
-        sex = "F" if low.startswith("жени") else "M" if low.startswith("мъже") else None
+        sex = "F" if low.startswith(("жени", "women")) else "M" if low.startswith(("мъже", "men")) else None
         veterans = "ветеран" in low
         pool = [x for x in meet.lifters
                 if x.sex == sex and x.status is LifterStatus.RANKED and x.points is not None
                 and x.equipment == "classic" and (x.division != "Open") == veterans]
         ranked = sorted(pool, key=lambda x: -x.points)
-        # The Open tables list three lifters, the veterans tables one (seen in one file), so the
-        # listed names are compared with the same number of top lifters.
+
         expected = ranked[: len(bests)]
         if not veterans and len(bests) < min(3, len(ranked)):
             out.append(Issue("BEST_LIFTERS_SHORT", Severity.WARNING,

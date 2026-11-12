@@ -1,0 +1,22 @@
+# keep personal data and local junk out of the build context (and so out of the image)
+data/
+out/
+*.xlsx
+*.xls
+*.csv
+hide.txt
+suppress*.txt
+.env
+.env.*
+.git
+.venv
+**/__pycache__
+.pytest_cache
+.ruff_cache
+notebooks
+tests
+docs
+db
+frontend/node_modules
+frontend/dist
+frontend/.angular

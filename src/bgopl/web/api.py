@@ -1,6 +1,6 @@
-from fastapi import FastAPI
-from fastapi import HTTPException
-from fastapi import FastAPI, HTTPException, Query, Depends
+from fastapi import FastAPI, Query, Depends,HTTPException
+from fastapi.responses import RedirectResponse
+import os
 from .schemas import (
     ClassGroupOut,
     FindingOut,
@@ -17,12 +17,13 @@ from .store import MeetRecord, Store
 from .deps import get_store
 
 def mount_api(app: FastAPI, store: Store):
+    contact = os.environ.get("BGOPL_CONTACT", "(contact address not set)")
     def record(slug: str) -> MeetRecord:
         rec = store.meets.get(slug)
         if rec is None:
             raise HTTPException(404, f"no meet {slug!r}")
         return rec
-    
+
     @app.get("/api/meets", response_model=list[MeetSummaryOut], tags=["meets"])
     def api_meets():
         return [meet_summary(r) for r in
@@ -66,5 +67,6 @@ def mount_api(app: FastAPI, store: Store):
 
     @app.get("/api/info", tags=["meta"])
     def api_info():
-        return {"contact": "novakovvenelin@gmail.com", "meets": len(store.meets), "unreadable_files": len(store.failed)}
+        return {"contact": contact, "meets": len(store.meets), "unreadable_files": len(store.failed)}
+
     

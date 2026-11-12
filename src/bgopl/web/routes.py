@@ -1,4 +1,5 @@
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from pathlib import Path, PurePosixPath
 import os
@@ -19,7 +20,14 @@ class SpaFiles(StaticFiles):
     
 def mount_routes(app) -> bool:
     frontend = Path(os.environ.get("BGOPL_FRONTEND_DIR") or DEFAULT_FRONTEND)
-    if not (frontend / "index.html").exists():
-        return False
-    app.mount("/app", SpaFiles(directory=str(frontend), html=True), name="app")
-    return True
+    built = (frontend / "index.html").exists()
+    if built:
+        app.mount("/app", SpaFiles(directory=str(frontend), html=True), name="app")
+
+    target = "/app/" if built else "/docs"
+
+    @app.get("/", include_in_schema=False)
+    def root():
+        return RedirectResponse(target)
+
+    return built

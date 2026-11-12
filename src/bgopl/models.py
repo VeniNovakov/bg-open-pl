@@ -1,4 +1,3 @@
-"""Plain data containers shared by the parser, validator and loader."""
 
 from __future__ import annotations
 
@@ -73,10 +72,10 @@ class TeamStanding:
     row: int
     division: str
     place: int | None
-    club: str  # as printed (already the full name in the 2026 NSA file)
-    points: int | None  # team points, e.g. 21
-    scorers: list[int]  # the "[12+9]" breakdown
-    weighted_points: Decimal | None  # the "109.15 w.pts." part, printed with 2 decimals
+    club: str 
+    points: int | None
+    scorers: list[int]
+    weighted_points: Decimal | None
 
 
 @dataclass

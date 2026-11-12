@@ -30,10 +30,15 @@ _IPF_GL = {
 }
 
 def wilks_factor(bodyweight_kg: Decimal, sex: str) -> Decimal | None:
+    bounds = _WILKS_RANGE.get(sex)
+    if bounds is None:
+        return None
+    
     x = float(bodyweight_kg)
-    lo, hi = _WILKS_RANGE[sex]
+    lo, hi = bounds
     if not lo <= x <= hi:
         return None
+    
     denominator = sum(c * x**i for i, c in enumerate(_WILKS[sex]))
     return Decimal(str(round(500 / denominator, 6)))
 
@@ -44,6 +49,7 @@ def ipf_gl_points(sex: str, equipment: str, bodyweight_kg: Decimal, total_kg: De
     coeffs = _IPF_GL.get((sex, equipment))
     if coeffs is None:
         return None
+    
     a, b, c = coeffs
     denominator = a - b * math.exp(-c * float(bodyweight_kg))
     return Decimal(str(round(float(total_kg) * 100 / denominator, 4)))
