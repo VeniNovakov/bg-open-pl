@@ -2,7 +2,6 @@
 # Real results spreadsheets hold athlete names. Keep them in data/ (ignored) or outside the repo.
 data/
 out/
-*.xlsx
 *.xls
 *.ods
 *.csv
