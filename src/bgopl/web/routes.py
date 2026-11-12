@@ -1,8 +1,9 @@
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse
-from starlette.exceptions import HTTPException as StarletteHTTPException
-from pathlib import Path, PurePosixPath
 import os
+from pathlib import Path, PurePosixPath
+
+from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 DEFAULT_FRONTEND = Path(__file__).resolve().parents[3] / "frontend" / "dist" / "frontend" / "browser"
 

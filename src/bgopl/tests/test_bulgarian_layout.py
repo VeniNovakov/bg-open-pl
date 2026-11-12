@@ -4,8 +4,7 @@ parser accepts as aliases; this file keeps the original Bulgarian layout covered
 from __future__ import annotations
 
 import openpyxl
-from  bgopl.tests.helpers_standard import clean_blocks, write_standard
-
+from bgopl.tests.helpers_standard import clean_blocks, write_standard
 from bgopl.parse_standard import parse_standard
 
 BG_HEADER = ["Място", None, "Отбор", "Дивизия", "Лично тегло", "Категория",

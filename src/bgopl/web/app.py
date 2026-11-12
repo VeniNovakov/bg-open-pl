@@ -7,9 +7,9 @@ from urllib.parse import quote
 from fastapi import FastAPI
 
 from ..models import Lifter
-from .store import Store
-from .routes import mount_routes
 from .api import mount_api
+from .routes import mount_routes
+from .store import Store
 
 SEX_CHOICES = {"F": "Women", "M": "Men"}
 DEFAULT_FRONTEND = Path(__file__).resolve().parents[3] / "frontend" / "dist" / "frontend" / "browser"

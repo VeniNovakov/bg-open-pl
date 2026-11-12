@@ -2,12 +2,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 from ..models import Issue, Lifter, LifterStatus, StandardMeet
 from ..parse_standard import parse_standard
 from ..validate_standard import validate_standard
-from decimal import Decimal, InvalidOperation
+
 
 def _key(sex: str | None, name: str) -> tuple[str, str]:
     return (sex or "?", name.casefold().strip())

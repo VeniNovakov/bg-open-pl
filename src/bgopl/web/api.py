@@ -1,6 +1,9 @@
-from fastapi import FastAPI, Query, Depends,HTTPException
-from fastapi.responses import RedirectResponse
 import os
+
+from fastapi import Depends, FastAPI, HTTPException, Query
+
+from ..views import group_lifters
+from .deps import get_store
 from .schemas import (
     ClassGroupOut,
     FindingOut,
@@ -12,9 +15,8 @@ from .schemas import (
     lifter_out,
     meet_summary,
 )
-from ..views import group_lifters
 from .store import MeetRecord, Store
-from .deps import get_store
+
 
 def mount_api(app: FastAPI, store: Store):
     contact = os.environ.get("BGOPL_CONTACT", "(contact address not set)")
