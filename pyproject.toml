@@ -12,6 +12,7 @@ dependencies = ["openpyxl>=3.1"]
 [project.optional-dependencies]
 db = ["psycopg[binary]>=3.1"]
 dev = ["pytest>=8", "ruff>=0.5"]
+web = ["fastapi>=0.110", "uvicorn>=0.29"]
 analysis = ["pandas>=2.1", "matplotlib>=3.8", "jupyterlab>=4"]
 
 [tool.setuptools.packages.find]
@@ -22,5 +23,11 @@ pythonpath = ["src", "tests"]
 testpaths = ["tests"]
 markers = ["db: needs PostgreSQL, set BGOPL_TEST_DSN (skipped otherwise)"]
 
+[tool.pyright]
+extraPaths = ["src/bgopl/tests"]
+
 [tool.ruff]
 line-length = 100
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query"]

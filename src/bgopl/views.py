@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 COLUMNS = ("File#", "Place", "Name", "Sex", "Club", "Div", "Class", "BW", "Squat", "Bench",
            "Dead", "Total", "Points")
 NUMERIC_COLUMNS = {0, 7, 8, 9, 10, 11, 12}
-DIVISION_ORDER = {"Open": 0, "M1": 1, "M2": 2, "M3": 3}
+DIVISION_ORDER = {"Open": 0, "SJR": 1, "JR": 2, "M1": 3, "M2": 4, "M3": 5, "M4": 6}
 LIFT_NAMES = {"S": "Squat", "B": "Bench", "D": "Deadlift"}
 
 
@@ -102,7 +102,7 @@ def group_lifters(lifters: list[Lifter]) -> list[tuple[str, list[Lifter]]]:
         else:
             key = (sex_rank, lifter.equipment == "equipped",
                    DIVISION_ORDER.get(lifter.division, 9), _class_sort_key(lifter),
-                   lifter.class_label or "")
+                   lifter.class_label or "", lifter.division)
         groups.setdefault(key, []).append(lifter)
 
     sex_names = {"F": "Women", "M": "Men"}
