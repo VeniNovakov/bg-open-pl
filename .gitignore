@@ -13,6 +13,9 @@ suppress*.txt
 # Excel lock files
 ~$*
 
+# Temporary files created by Jupyter notebooks
+.ipynb_checkpoints/
+
 .env
 .env.*
 !.env.example

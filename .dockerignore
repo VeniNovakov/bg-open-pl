@@ -13,7 +13,7 @@ suppress*.txt
 **/__pycache__
 .pytest_cache
 .ruff_cache
-notebooks
+notebook
 tests
 docs
 db
