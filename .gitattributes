@@ -1,3 +1,4 @@
-*.ipynb linguist-documentation
+*.ipynb linguist-vendored
+*.ipynb linguist-detectable=false
 frontend/package-lock.json linguist-generated
 test_data/** linguist-vendored
